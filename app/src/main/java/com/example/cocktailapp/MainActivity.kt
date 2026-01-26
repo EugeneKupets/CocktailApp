@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.cocktailapp.ui.theme.CocktailAppTheme
+import com.example.cocktailapp.ui.theme.CocktailsNavigationBar
 import com.example.cocktailapp.ui.theme.CocktailsScreen
 
 class MainActivity : ComponentActivity() {
@@ -24,7 +25,7 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    CocktailApp()
+                    CocktailsNavigationBar()
                 }
             }
         }

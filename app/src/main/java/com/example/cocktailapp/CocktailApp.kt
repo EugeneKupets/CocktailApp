@@ -5,6 +5,7 @@ package com.example.cocktailapp
 import androidx.compose.foundation.layout.PaddingValues
 import com.example.cocktailapp.R
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -26,16 +27,20 @@ import com.example.cocktailapp.viewmodel.CocktailsViewModel
 fun CocktailApp(){
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .fillMaxSize(),
         topBar = {CocktailTopAppBar(scrollBehavior = scrollBehavior)}
-    ) { it: PaddingValues ->
+    ) { innerPadding ->
         Surface(
             modifier = Modifier.fillMaxSize()
         ) {
             val cocktailsViewModel: CocktailsViewModel = viewModel()
             CocktailsScreen(
                 cocktailUiState = cocktailsViewModel.cocktailUiState,
-                contentPadding = it
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
             )
         }
     }

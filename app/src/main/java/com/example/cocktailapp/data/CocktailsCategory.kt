@@ -8,7 +8,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 
 enum class CocktailsCategory(
-    val kind: String,
+    val route: String,
     val label: String,
     val icon: ImageVector,
     val contentDescription: String
