@@ -2,8 +2,6 @@
 
 package com.example.cocktailapp
 
-import androidx.compose.foundation.layout.PaddingValues
-import com.example.cocktailapp.R
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -20,7 +18,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cocktailapp.ui.theme.CocktailsScreen
-import com.example.cocktailapp.viewmodel.CocktailUiState
 import com.example.cocktailapp.viewmodel.CocktailsViewModel
 
 @Composable
@@ -47,8 +44,9 @@ fun CocktailApp(){
 }
 
 @Composable
-fun CocktailTopAppBar(scrollBehavior: TopAppBarScrollBehavior,
-                      modifier: Modifier = Modifier){
+fun CocktailTopAppBar(
+    scrollBehavior: TopAppBarScrollBehavior,
+    modifier: Modifier = Modifier){
     CenterAlignedTopAppBar(
         scrollBehavior = scrollBehavior,
         title = {
