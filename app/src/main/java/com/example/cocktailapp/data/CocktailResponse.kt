@@ -18,7 +18,7 @@ data class CocktailApiCocktails(
     @SerialName("strDrinkThumb")
     val strDrinkThumb: String,
 
-    val strInstruction: String? = null,
+    val strInstructions: String? = null,
     val strCategory: String? = null,
     val strGlass: String? = null,
     val strAlcoholic: String? = null,

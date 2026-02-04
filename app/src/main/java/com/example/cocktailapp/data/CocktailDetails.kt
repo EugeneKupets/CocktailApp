@@ -65,7 +65,7 @@ fun CocktailApiCocktails.toDetails(): CocktailDetails{
         id = idDrink,
         name = strDrink,
         imgSrc = strDrinkThumb,
-        instructions = strInstruction ?: "No instructions available",
+        instructions = strInstructions ?: "No instructions available",
         category = strCategory ?: "Unknow",
         glass = strGlass ?: "Unknow",
         type = strAlcoholic ?: "Yes",

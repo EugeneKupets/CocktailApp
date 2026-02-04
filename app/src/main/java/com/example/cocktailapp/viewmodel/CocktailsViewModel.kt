@@ -24,6 +24,13 @@ sealed interface CocktailUiState{
 
 class CocktailsViewModel : ViewModel(){
 
+    var searchQuery by mutableStateOf("")
+        private set
+
+    fun onSearchQueryChange(newQuery: String) {
+        searchQuery = newQuery
+    }
+
     var cocktailUiState: CocktailUiState by mutableStateOf(CocktailUiState.Loading)
         private set
 
@@ -77,6 +84,20 @@ class CocktailsViewModel : ViewModel(){
             }
         }
     }
+
+    val filteredCocktailUiState: CocktailUiState
+        get(){
+            val currentState = cocktailUiState
+            return if (currentState is CocktailUiState.Success &&
+                searchQuery.isNotEmpty()){
+                val filteredList = currentState.cocktails.filter { cocktail ->
+                    cocktail.name.contains(searchQuery, ignoreCase = true)
+                }
+                CocktailUiState.Success(filteredList)
+            } else{
+                currentState
+            }
+        }
 
     sealed interface CocktailDetailUiState{
         data class Success(val cocktail: CocktailDetails) : CocktailDetailUiState

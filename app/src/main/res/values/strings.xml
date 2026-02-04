@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CocktailApp</string>
-    <string name="loading">CocktailApp</string>
-    <string name="loading_failed">CocktailApp</string>
+    <string name="app_name">Cocktail App</string>
+    <string name="loading">Cocktail App</string>
+    <string name="loading_failed">Cocktail App</string>
 </resources>
