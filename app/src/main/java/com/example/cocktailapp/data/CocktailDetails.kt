@@ -21,9 +21,9 @@ data class CocktailDetails(
 
 fun CocktailApiCocktails.toCocktails(): Cocktails{
     return Cocktails(
-        id = idDrink,
-        name = strDrink,
-        imgSrc = strDrinkThumb
+        id = idDrink ?: "",
+        name = strDrink ?: "",
+        imgSrc = strDrinkThumb ?: ""
     )
 }
 
@@ -62,9 +62,9 @@ fun CocktailApiCocktails.toDetails(): CocktailDetails{
             (strMeasure15 ?: ""))
 
     return CocktailDetails(
-        id = idDrink,
-        name = strDrink,
-        imgSrc = strDrinkThumb,
+        id = idDrink ?: "",
+        name = strDrink ?: "",
+        imgSrc = strDrinkThumb ?: "",
         instructions = strInstructions ?: "No instructions available",
         category = strCategory ?: "Unknow",
         glass = strGlass ?: "Unknow",

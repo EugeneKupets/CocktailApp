@@ -1,6 +1,8 @@
 package com.example.cocktailapp.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 
 import androidx.compose.runtime.setValue
@@ -14,6 +16,7 @@ import com.example.cocktailapp.data.CocktailsCategory
 import com.example.cocktailapp.data.toDetails
 import kotlinx.coroutines.launch
 import okio.IOException
+import kotlin.collections.emptyList
 
 
 sealed interface CocktailUiState{
@@ -24,6 +27,67 @@ sealed interface CocktailUiState{
 
 class CocktailsViewModel : ViewModel(){
 
+    var selectedIngredient by mutableStateOf<String?>(null)
+        private set
+
+    var allIngredients = mutableStateListOf<String>()
+        private set
+
+    fun selectedIngredient(ingredient: String){
+        selectedIngredient = if (selectedIngredient == ingredient) null else ingredient
+    }
+
+    fun applyIngredientFilter(){
+        val ingredient = selectedIngredient
+
+        if (ingredient == null){
+            getCocktails(CocktailsCategory.Alco)
+        }else {
+            viewModelScope.launch {
+                cocktailUiState = CocktailUiState.Loading
+                try {
+                    val response =
+                        CocktailApi.retrofitService.getCocktailByIngredient(ingredient)
+
+                    val cocktails = response.drinks?.map {
+                        Cocktails(
+                            id = it.idDrink ?: "",
+                            name = it.strDrink ?: "",
+                            imgSrc = it.strDrinkThumb ?: "",)
+                    } ?: emptyList()
+
+                    cocktailUiState = if (cocktails.isNotEmpty()){
+                        CocktailUiState.Success(cocktails)
+                    }else {
+                        CocktailUiState.Error
+                    }
+                }catch (e: Exception){
+                    cocktailUiState = CocktailUiState.Error
+                }
+            }
+        }
+    }
+
+    fun clearFilter(){
+        selectedIngredient = null
+        applyIngredientFilter()
+    }
+
+    fun loadIngredients() {
+        viewModelScope.launch {
+            try {
+                val response = CocktailApi.retrofitService.getAllIngredients()
+
+                val ingredientsList = response.drinks?.mapNotNull { it.strIngredient1 }?.sorted() ?: emptyList()
+
+                allIngredients.clear()
+                allIngredients.addAll(ingredientsList)
+
+            } catch (e: Exception){
+                Log.e("CocktailsViewModel", "Error loading ingredients", e)
+            }
+        }
+    }
     var searchQuery by mutableStateOf("")
         private set
 
@@ -39,6 +103,7 @@ class CocktailsViewModel : ViewModel(){
 
     init {
         getCocktails(CocktailsCategory.Alco)
+        loadIngredients()
     }
 
     fun getCocktails(category: CocktailsCategory){
@@ -65,9 +130,10 @@ class CocktailsViewModel : ViewModel(){
                 }
                 val cocktails = response.drinks?.map{
                     Cocktails(
-                        id = it.idDrink,
-                        name = it.strDrink,
-                        it.strDrinkThumb)
+                        id = it.idDrink ?: "",
+                        name = it.strDrink ?: "",
+                        it.strDrinkThumb ?: ""
+                    )
                 }?:emptyList()
 
                 when(category){

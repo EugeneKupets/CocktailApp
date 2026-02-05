@@ -49,6 +49,7 @@ import com.example.cocktailapp.data.CocktailsCategory
 import com.example.cocktailapp.ui.theme.CocktailInfo
 import com.example.cocktailapp.ui.theme.CocktailsScreen
 import com.example.cocktailapp.ui.theme.ErrorScreen
+import com.example.cocktailapp.ui.theme.FilterScreen
 import com.example.cocktailapp.ui.theme.LoadingScreen
 import com.example.cocktailapp.viewmodel.CocktailsViewModel
 
@@ -70,6 +71,24 @@ fun CocktailApp() {
                     sharedTransitionScope = this@SharedTransitionLayout,
                     onCocktailClick = { cocktailId ->
                         navController.navigate("details/$cocktailId")
+                    },
+                    onOpenFilter = { navController.navigate("filter") }
+                )
+            }
+
+            composable("filter") {
+                FilterScreen(
+                    allIngredients = viewModel.allIngredients,
+                    selectedIngredient = viewModel.selectedIngredient,
+                    onIngredientSelected = {ingredient ->
+                        viewModel.selectedIngredient(ingredient)
+                    },
+                    onApply = {
+                        viewModel.applyIngredientFilter()
+                        navController.popBackStack()
+                    },
+                    onClear = {
+                        viewModel.clearFilter()
                     }
                 )
             }
@@ -114,7 +133,8 @@ fun CocktailApp() {
      viewModel: CocktailsViewModel,
      onCocktailClick: (String) -> Unit,
      animatedVisibilityScope: AnimatedVisibilityScope,
-     sharedTransitionScope: SharedTransitionScope
+     sharedTransitionScope: SharedTransitionScope,
+     onOpenFilter: () -> Unit
  ){
      val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
      var selectedDestination by rememberSaveable { mutableStateOf(CocktailsCategory.Alco) }
@@ -125,7 +145,7 @@ fun CocktailApp() {
              .fillMaxSize(),
          topBar = { CocktailTopAppBar(
              scrollBehavior = scrollBehavior,
-             onFilterClick = {},
+             onFilterClick = onOpenFilter,
              onSearchQueryChanged = {query ->
                  viewModel.onSearchQueryChange(query)
              }) },
@@ -230,7 +250,7 @@ fun CocktailTopAppBar(
                 IconButton(onClick = onFilterClick) {
                     Icon(
                         imageVector = Icons.Default.FilterList,
-                        contentDescription = "Filter Ingredients"
+                        contentDescription = "Filter"
                     )
                 }
             },

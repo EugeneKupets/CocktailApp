@@ -12,11 +12,11 @@ data class CocktailResponse(
 
 @Serializable
 data class CocktailApiCocktails(
-    val idDrink: String,
-    val strDrink: String,
+    val idDrink: String? = null,
+    val strDrink: String? = null,
 
     @SerialName("strDrinkThumb")
-    val strDrinkThumb: String,
+    val strDrinkThumb: String? = null,
 
     val strInstructions: String? = null,
     val strCategory: String? = null,

@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,8 +41,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -253,19 +255,20 @@ fun CocktailInfo(
 
                     Spacer(modifier = Modifier.size(16.dp))
 
+                    if (measure.isNotEmpty()){
+                        Text(
+                            text = "$measure ",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
+
                     Text(
                         text = ingredient,
                         modifier = Modifier.weight(1f),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
-                    if (measure.isNotEmpty()){
-                        Text(
-                            text = measure,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                    }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -292,10 +295,10 @@ fun CocktailInfo(
 
 
 @Composable
-fun filterScreen(
+fun FilterScreen(
     allIngredients: List<String>,
-    selectedIngredients: List<String>,
-    onIngredientsToggle: (String) -> Unit,
+    selectedIngredient: String?,
+    onIngredientSelected: (String) -> Unit,
     onApply: () -> Unit,
     onClear: () -> Unit
 ){
@@ -304,30 +307,47 @@ fun filterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable{onClear()}
+                .padding(vertical = 8.dp)
+        ) {
+            RadioButton(
+                selected = selectedIngredient == null,
+                onClick = onClear
+            )
+            Text(text = "Show All (No Filter)", modifier = Modifier.padding(start = 8.dp))
+        }
+
+        Divider()
+
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(allIngredients) {ingredient ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable{onIngredientsToggle(ingredient)}
+                        .clickable{onIngredientSelected(ingredient)}
                         .padding(vertical = 8.dp)
                 ) {
-                    Checkbox(
-                        checked = selectedIngredients.contains(ingredient),
-                        onCheckedChange = {onIngredientsToggle(ingredient)}
+                    RadioButton(
+                        selected = selectedIngredient == ingredient,
+                        onClick = {onIngredientSelected(ingredient)}
                     )
                     Text(text = ingredient, modifier = Modifier.padding(start = 8.dp))
                 }
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onApply,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            TextButton(onClick = onClear) {Text("Clear All")}
-            Button(onClick = onApply) {Text("Apply")}
+            Text("Apply Filter")
         }
     }
 }

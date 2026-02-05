@@ -30,10 +30,17 @@ interface ApiService {
 
     @GET("lookup.php")
     suspend fun getCocktailById(@Query("i") id: String): CocktailResponse
+
+    @GET("filter.php")
+    suspend fun getCocktailByIngredient(@Query("i") ingredient: String): CocktailResponse
+
+    @GET("list.php?i=list")
+    suspend fun getAllIngredients(): CocktailResponse
 }
 
-object CocktailApi{
-    val retrofitService:ApiService by lazy {
+object CocktailApi {
+    val retrofitService: ApiService by lazy {
         retrofit.create(ApiService::class.java)
     }
 }
+
