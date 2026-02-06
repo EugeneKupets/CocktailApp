@@ -36,6 +36,9 @@ interface ApiService {
 
     @GET("list.php?i=list")
     suspend fun getAllIngredients(): CocktailResponse
+
+    @GET("search.php")
+    suspend fun cocktailsSearch(@Query("s") query: String): CocktailResponse
 }
 
 object CocktailApi {

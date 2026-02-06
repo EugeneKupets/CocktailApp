@@ -8,12 +8,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.network.HttpException
 import com.example.cocktailapp.api.CocktailApi
 import com.example.cocktailapp.data.CocktailDetails
 import com.example.cocktailapp.data.Cocktails
 import com.example.cocktailapp.data.CocktailsCategory
 import com.example.cocktailapp.data.toDetails
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import okio.IOException
 import kotlin.collections.emptyList
@@ -88,11 +92,49 @@ class CocktailsViewModel : ViewModel(){
             }
         }
     }
+
+    private var searchJob: Job?  = null
+
+    private var lastSelectedCategory:
+            CocktailsCategory = CocktailsCategory.Alco
+
     var searchQuery by mutableStateOf("")
         private set
 
     fun onSearchQueryChange(newQuery: String) {
         searchQuery = newQuery
+
+        searchJob?.cancel()
+
+        if(newQuery.isEmpty()){
+            getCocktails(lastSelectedCategory)
+            return
+        }
+
+        searchJob = viewModelScope.launch {
+            delay(300)
+
+            cocktailUiState = CocktailUiState.Loading
+
+            try {
+                val response = CocktailApi.retrofitService.cocktailsSearch(newQuery)
+                val cocktails = response.drinks?.map {
+                    Cocktails(
+                        it.idDrink ?: "",
+                        it.strDrink ?: "",
+                        it.strDrinkThumb ?: ""
+                    )
+                } ?: emptyList()
+
+                cocktailUiState = if (cocktails.isNotEmpty()){
+                    CocktailUiState.Success(cocktails)
+                } else{
+                    CocktailUiState.Error
+                }
+            } catch (e: Exception){
+                cocktailUiState = CocktailUiState.Error
+            }
+        }
     }
 
     var cocktailUiState: CocktailUiState by mutableStateOf(CocktailUiState.Loading)
@@ -107,6 +149,9 @@ class CocktailsViewModel : ViewModel(){
     }
 
     fun getCocktails(category: CocktailsCategory){
+
+        lastSelectedCategory = category
+
         viewModelScope.launch {
 
             val cacheData = when(category){
@@ -151,19 +196,6 @@ class CocktailsViewModel : ViewModel(){
         }
     }
 
-    val filteredCocktailUiState: CocktailUiState
-        get(){
-            val currentState = cocktailUiState
-            return if (currentState is CocktailUiState.Success &&
-                searchQuery.isNotEmpty()){
-                val filteredList = currentState.cocktails.filter { cocktail ->
-                    cocktail.name.contains(searchQuery, ignoreCase = true)
-                }
-                CocktailUiState.Success(filteredList)
-            } else{
-                currentState
-            }
-        }
 
     sealed interface CocktailDetailUiState{
         data class Success(val cocktail: CocktailDetails) : CocktailDetailUiState

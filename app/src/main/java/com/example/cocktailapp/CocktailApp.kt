@@ -173,7 +173,7 @@ fun CocktailApp() {
                  .padding(innerPadding)
          ) {
              CocktailsScreen(
-                 cocktailUiState = viewModel.filteredCocktailUiState,
+                 cocktailUiState = viewModel.cocktailUiState,
                  onCocktailClick = onCocktailClick,
                  animatedVisibilityScope = animatedVisibilityScope,
                  sharedTransitionScope = sharedTransitionScope,
