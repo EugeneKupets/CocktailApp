@@ -1,5 +1,6 @@
 package com.example.cocktailapp.ui.theme
 
+
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -42,8 +44,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
@@ -182,6 +186,7 @@ fun CocktailCard(
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun CocktailInfo(
+    modifier: Modifier = Modifier,
     cocktails: CocktailDetails,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope
@@ -190,6 +195,7 @@ fun CocktailInfo(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())) {
             GlideImage(
                 model = cocktails.imgSrc,
@@ -298,7 +304,9 @@ fun FilterScreen(
     onApply: () -> Unit,
     onClear: () -> Unit
 ){
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(modifier = Modifier
+        .padding(8.dp)
+        .navigationBarsPadding()) {
         Text("Filter by Ingredients", style = MaterialTheme.typography.titleLarge)
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -339,14 +347,46 @@ fun FilterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = onApply,
-            modifier = Modifier.fillMaxWidth()
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+
         ) {
-            Text("Apply Filter")
+            Button(
+                onClick = onClear,
+                modifier = Modifier
+
+            ) {
+                Text("Clear")
+            }
+
+            Button(
+                onClick = onApply,
+                modifier = Modifier
+            ) {
+                Text("Apply Filter")
+            }
+
         }
     }
 }
 
 
+@Preview(showBackground = true)
+@Composable
+fun LoadingScreenPreview(){
+    CocktailAppTheme() {
+        LoadingScreen()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ErrorScreenPreview(){
+    CocktailAppTheme() {
+        ErrorScreen()
+    }
+}
 
