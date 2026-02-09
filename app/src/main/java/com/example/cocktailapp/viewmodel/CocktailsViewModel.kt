@@ -4,11 +4,9 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.network.HttpException
 import com.example.cocktailapp.api.CocktailApi
 import com.example.cocktailapp.data.CocktailDetails
@@ -17,7 +15,6 @@ import com.example.cocktailapp.data.CocktailsCategory
 import com.example.cocktailapp.data.toDetails
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import okio.IOException
 import kotlin.collections.emptyList

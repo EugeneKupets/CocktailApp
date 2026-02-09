@@ -188,7 +188,6 @@ fun CocktailTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior,
     onFilterClick: () -> Unit,
     onSearchQueryChanged: (String) -> Unit,
-    modifier: Modifier = Modifier
 ){
 
     var isSearchActive by rememberSaveable {mutableStateOf(false) }

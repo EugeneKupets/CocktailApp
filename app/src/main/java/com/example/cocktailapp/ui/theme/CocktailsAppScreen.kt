@@ -1,6 +1,5 @@
 package com.example.cocktailapp.ui.theme
 
-
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -183,7 +182,6 @@ fun CocktailCard(
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun CocktailInfo(
-    modifier: Modifier = Modifier,
     cocktails: CocktailDetails,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope
@@ -350,19 +348,5 @@ fun FilterScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LoadingScreenPreview(){
-    CocktailAppTheme() {
-        LoadingScreen()
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun ErrorScreenPreview(){
-    CocktailAppTheme() {
-        ErrorScreen()
-    }
-}
 
