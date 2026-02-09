@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.network.HttpException
+import com.example.cocktailapp.CocktailApp
 import com.example.cocktailapp.api.CocktailApi
 import com.example.cocktailapp.data.CocktailDetails
 import com.example.cocktailapp.data.Cocktails
@@ -27,7 +28,6 @@ sealed interface CocktailUiState{
 }
 
 class CocktailsViewModel : ViewModel(){
-
     var selectedIngredient by mutableStateOf<String?>(null)
         private set
 
@@ -222,6 +222,33 @@ class CocktailsViewModel : ViewModel(){
                 CocktailDetailUiState.Error
             }catch (e: HttpException){
                 CocktailDetailUiState.Error
+            }
+        }
+    }
+
+    var ingredientCocktailUiState: CocktailUiState by mutableStateOf(CocktailUiState.Loading)
+        private set
+
+    fun loadCocktailsForIngredient(ingredient: String){
+        viewModelScope.launch {
+            ingredientCocktailUiState = CocktailUiState.Loading
+            try {
+                val response = CocktailApi.retrofitService.getCocktailByIngredient(ingredient)
+                val cocktails = response.drinks?.map {
+                    Cocktails(
+                        it.idDrink ?: "",
+                        it.strDrink ?: "",
+                        it.strDrinkThumb ?: ""
+                    )
+                } ?: emptyList()
+
+                ingredientCocktailUiState = if (cocktails.isNotEmpty()){
+                    CocktailUiState.Success(cocktails)
+                }else {
+                    CocktailUiState.Error
+                }
+            }catch (e: Exception){
+                ingredientCocktailUiState = CocktailUiState.Error
             }
         }
     }

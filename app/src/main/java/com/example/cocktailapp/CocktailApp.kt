@@ -50,7 +50,9 @@ import com.example.cocktailapp.ui.theme.CocktailInfo
 import com.example.cocktailapp.ui.theme.CocktailsScreen
 import com.example.cocktailapp.ui.theme.ErrorScreen
 import com.example.cocktailapp.ui.theme.FilterScreen
+import com.example.cocktailapp.ui.theme.IngredientScreen
 import com.example.cocktailapp.ui.theme.LoadingScreen
+import com.example.cocktailapp.viewmodel.CocktailUiState
 import com.example.cocktailapp.viewmodel.CocktailsViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -94,6 +96,44 @@ fun CocktailApp() {
             }
 
             composable(
+                route = "ingredient/{ingredientName}",
+                arguments = listOf(navArgument("ingredientName"){
+                    type =
+                        NavType.StringType
+                })
+            ){ backStackEntry ->
+                val ingredientName =
+                    backStackEntry.arguments?.getString("ingredientName") ?: ""
+
+                LaunchedEffect(ingredientName) {
+                    if (ingredientName.isNotEmpty()){
+                        viewModel.loadCocktailsForIngredient(ingredientName)
+                    }
+                }
+
+                val state = viewModel.ingredientCocktailUiState
+
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    when(state){
+                        is CocktailUiState.Loading -> LoadingScreen()
+                        is CocktailUiState.Error -> ErrorScreen()
+                        is CocktailUiState.Success -> {
+                            IngredientScreen(
+                                ingredientName = ingredientName,
+                                cocktails = state.cocktails,
+                                onBackClick = {navController.popBackStack()},
+                                onCocktailClick = { cocktailId ->
+                                    navController.navigate("details/$cocktailId")
+                                },
+                                animatedVisibilityScope = this@composable,
+                                sharedTransitionScope = this@SharedTransitionLayout
+                            )
+                        }
+                    }
+                }
+            }
+
+            composable(
                 route = "details/{cocktailId}",
                 arguments = listOf(navArgument("cocktailId") {
                     type =
@@ -117,6 +157,10 @@ fun CocktailApp() {
                         is CocktailsViewModel.CocktailDetailUiState.Success ->
                             CocktailInfo(
                                 cocktails = detailState.cocktail,
+                                onBackClick = {navController.popBackStack()},
+                                onIngredientClick = {ingredientName ->
+                                    navController.navigate("ingredient/$ingredientName")
+                                },
                                 animatedVisibilityScope = this@composable,
                                 sharedTransitionScope = this@SharedTransitionLayout
                             )

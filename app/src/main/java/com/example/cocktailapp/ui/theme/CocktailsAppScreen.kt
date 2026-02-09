@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.cocktailapp.viewmodel.CocktailUiState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,8 +23,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -39,15 +43,21 @@ import com.example.cocktailapp.data.Cocktails
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
@@ -188,6 +198,8 @@ fun CocktailCard(
 fun CocktailInfo(
     modifier: Modifier = Modifier,
     cocktails: CocktailDetails,
+    onBackClick: () -> Unit,
+    onIngredientClick: (String) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope
 ){
@@ -197,19 +209,42 @@ fun CocktailInfo(
                 .fillMaxSize()
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())) {
-            GlideImage(
-                model = cocktails.imgSrc,
-                contentDescription = cocktails.name,
-                loading = placeholder(R.drawable.loading_img),
+
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(500.dp)
-                    .sharedElement(
-                        sharedContentState = rememberSharedContentState(key = "image-${cocktails.id}"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    ),
-                contentScale = ContentScale.Crop
-            )
+            ){
+                GlideImage(
+                    model = cocktails.imgSrc,
+                    contentDescription = cocktails.name,
+                    loading = placeholder(R.drawable.loading_img),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(key = "image-${cocktails.id}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                    contentScale = ContentScale.Crop
+                )
+
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                        .statusBarsPadding()
+                        .background(color = Color.Black.copy(alpha = 0.4f),
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -241,6 +276,7 @@ fun CocktailInfo(
 
                     modifier = Modifier
                         .fillMaxSize()
+                        .clickable{onIngredientClick(ingredient)}
                         .padding(horizontal = 16.dp, vertical = 16.dp)
                 ) {
                     GlideImage(
@@ -373,6 +409,70 @@ fun FilterScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class, ExperimentalGlideComposeApi::class)
+@Composable
+fun IngredientScreen(
+    ingredientName: String,
+    cocktails: List<Cocktails>,
+    onCocktailClick: (String) -> Unit,
+    onBackClick: () -> Unit,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
+){
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {Text(ingredientName)},
+                navigationIcon ={
+                    IconButton(onClick = onBackClick){
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(paddingValues)
+            ){
+                item(span = { GridItemSpan(2) }){
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ){
+                        GlideImage(
+                            model =
+                                "https://www.thecocktaildb.com/images/ingredients/$ingredientName.png",
+                            contentDescription = ingredientName,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp)
+                                .padding(bottom = 16.dp),
+                            contentScale = ContentScale.Fit
+                        )
+
+                        Text(
+                            text = "Cocktails with ${ingredientName}",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                }
+
+                items(cocktails){cocktail ->
+                    CocktailCard(
+                        cocktails = cocktail,
+                        onClick = { onCocktailClick(cocktail.id) },
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        sharedTransitionScope = sharedTransitionScope
+                    )
+                }
+            }
+        }
+    }
 
 @Preview(showBackground = true)
 @Composable
@@ -389,4 +489,6 @@ fun ErrorScreenPreview(){
         ErrorScreen()
     }
 }
+
+
 
