@@ -1,6 +1,7 @@
 package com.example.cocktailapp.ui.theme
 
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -55,15 +56,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
+import com.example.cocktailapp.api.GoogleAuthClient
 import com.example.cocktailapp.data.CocktailDetails
+import kotlinx.coroutines.coroutineScope
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -473,6 +479,41 @@ fun IngredientScreen(
             }
         }
     }
+
+@Composable
+fun LoginScreen(
+    onLoginSuccess: () -> Unit
+){
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val googleAuth = remember { GoogleAuthClient(context) }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ){
+        Button(
+            onClick = {
+                googleAuth.singIn(
+                    coroutineScope = scope,
+                    onSuccess = {email ->
+                        Toast.makeText(context, "Login is complete: $email",
+                            Toast.LENGTH_LONG).show()
+                        onLoginSuccess()
+                    },
+                    onError = {error ->
+                        Toast.makeText(context, "Error: $error",
+                            Toast.LENGTH_LONG).show()
+                    }
+                )
+            },
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(text = "Sign in with Google")
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable

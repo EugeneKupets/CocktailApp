@@ -52,6 +52,7 @@ import com.example.cocktailapp.ui.theme.ErrorScreen
 import com.example.cocktailapp.ui.theme.FilterScreen
 import com.example.cocktailapp.ui.theme.IngredientScreen
 import com.example.cocktailapp.ui.theme.LoadingScreen
+import com.example.cocktailapp.ui.theme.LoginScreen
 import com.example.cocktailapp.viewmodel.CocktailUiState
 import com.example.cocktailapp.viewmodel.CocktailsViewModel
 
@@ -64,8 +65,18 @@ fun CocktailApp() {
     SharedTransitionLayout {
         NavHost(
             navController = navController,
-            startDestination = "home"
+            startDestination = "login"
         ) {
+
+            composable("login"){
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate("home"){
+                            popUpTo("login") {inclusive = true}
+                        }
+                    }
+                )
+            }
             composable("home") {
                 HomeScreen(
                     viewModel = viewModel,
