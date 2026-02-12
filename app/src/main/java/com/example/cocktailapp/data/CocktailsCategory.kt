@@ -5,14 +5,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.descriptors.SerialKind
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Warning
 
 enum class CocktailsCategory(
-    val route: String,
     val label: String,
     val icon: ImageVector,
-    val contentDescription: String
+    val isApiCategory: Boolean = true
 ) {
-    Alco("alco", "Alco", Icons.Default.Warning,"Alco"),
-    NonAlco("nonalco", "NonAlco", Icons.Default.CheckCircle,"NonAlco")
+    Alco("Alco", Icons.Default.Warning),
+    NonAlco("Non-Alco", Icons.Default.CheckCircle),
+    Profile("Profile", Icons.Default.Person, false)
 }

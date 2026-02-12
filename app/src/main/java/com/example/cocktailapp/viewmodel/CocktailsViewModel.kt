@@ -1,10 +1,13 @@
 package com.example.cocktailapp.viewmodel
 
+import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.network.HttpException
@@ -13,6 +16,7 @@ import com.example.cocktailapp.api.CocktailApi
 import com.example.cocktailapp.data.CocktailDetails
 import com.example.cocktailapp.data.Cocktails
 import com.example.cocktailapp.data.CocktailsCategory
+import com.example.cocktailapp.data.GoogleUser
 import com.example.cocktailapp.data.toDetails
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -27,7 +31,23 @@ sealed interface CocktailUiState{
     object Loading : CocktailUiState
 }
 
-class CocktailsViewModel : ViewModel(){
+class CocktailsViewModel() : ViewModel(){
+
+    var user by mutableStateOf<GoogleUser?>(null)
+        private set
+
+    fun setUser(
+        email: String?,
+        name: String?,
+        photoUrl: String?
+    ){
+        user = GoogleUser(email, name, photoUrl)
+    }
+
+    fun singOut(){
+        user = null
+    }
+
     var selectedIngredient by mutableStateOf<String?>(null)
         private set
 
@@ -147,6 +167,8 @@ class CocktailsViewModel : ViewModel(){
 
     fun getCocktails(category: CocktailsCategory){
 
+        if (category == CocktailsCategory.Profile) return
+
         lastSelectedCategory = category
 
         viewModelScope.launch {
@@ -154,6 +176,7 @@ class CocktailsViewModel : ViewModel(){
             val cacheData = when(category){
                 CocktailsCategory.Alco -> alcoholicList
                 CocktailsCategory.NonAlco -> nonAlcoholicList
+                else -> null
             }
 
             if (cacheData != null){
@@ -169,6 +192,7 @@ class CocktailsViewModel : ViewModel(){
                         CocktailApi.retrofitService.getAlcoholicCocktails()
                     CocktailsCategory.NonAlco ->
                         CocktailApi.retrofitService.getNonAlcoholicCocktails()
+                    else -> throw IllegalStateException("API not supported for $category")
                 }
                 val cocktails = response.drinks?.map{
                     Cocktails(
@@ -181,6 +205,7 @@ class CocktailsViewModel : ViewModel(){
                 when(category){
                     CocktailsCategory.Alco -> alcoholicList = cocktails
                     CocktailsCategory.NonAlco -> nonAlcoholicList = cocktails
+                    else -> {}
                 }
 
                 cocktailUiState = CocktailUiState.Success(cocktails)

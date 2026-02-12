@@ -6,7 +6,6 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.CoroutineScope
@@ -17,7 +16,7 @@ class GoogleAuthClient(private val context: Context){
 
     fun singIn(
         coroutineScope: CoroutineScope,
-        onSuccess: (String) -> Unit,
+        onSuccess: (email: String, name: String?, photoUrl: String?) -> Unit,
         onError: (String) -> Unit
     ){
         val webClient = "186773952106-29q7bvb0fp3b7gdoimfoaru2r8r2reqq.apps.googleusercontent.com"
@@ -46,7 +45,11 @@ class GoogleAuthClient(private val context: Context){
                     val googleIdTokenCredential =
                         GoogleIdTokenCredential.createFrom(credential.data)
 
-                    onSuccess(googleIdTokenCredential.id)
+                    val email = googleIdTokenCredential.id
+                    val name = googleIdTokenCredential.displayName
+                    val photoUrl = googleIdTokenCredential.profilePictureUri?.toString()
+
+                    onSuccess(email, name, photoUrl)
                 } else {
                     onError("Unknown authorization type")
                 }

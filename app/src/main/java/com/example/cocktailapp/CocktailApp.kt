@@ -2,6 +2,7 @@
 
 package com.example.cocktailapp
 
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -38,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -53,24 +55,48 @@ import com.example.cocktailapp.ui.theme.FilterScreen
 import com.example.cocktailapp.ui.theme.IngredientScreen
 import com.example.cocktailapp.ui.theme.LoadingScreen
 import com.example.cocktailapp.ui.theme.LoginScreen
+import com.example.cocktailapp.ui.theme.ProfileScreen
 import com.example.cocktailapp.viewmodel.CocktailUiState
 import com.example.cocktailapp.viewmodel.CocktailsViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CocktailApp() {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val viewModel: CocktailsViewModel = viewModel()
+
+    LaunchedEffect(Unit) {
+        val sharedPrefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val email = sharedPrefs.getString("email", null)
+        val name = sharedPrefs.getString("name", null)
+        val photo = sharedPrefs.getString("photo", null)
+
+        if (email != null) {
+            viewModel.setUser(email, name, photo)
+        }
+    }
+
+    val startDestination = if(viewModel.user != null) "home" else "login"
 
     SharedTransitionLayout {
         NavHost(
             navController = navController,
-            startDestination = "login"
+            startDestination = startDestination
         ) {
 
             composable("login"){
                 LoginScreen(
-                    onLoginSuccess = {
+                    onLoginSuccess = { email, name, photoUrl ->
+                        val sharedPrefs =
+                            context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                        sharedPrefs.edit()
+                            .putString("email", email)
+                            .putString("name", name)
+                            .putString("photo", photoUrl)
+                            .apply()
+
+                        viewModel.setUser(email, name, photoUrl)
                         navController.navigate("home"){
                             popUpTo("login") {inclusive = true}
                         }
@@ -80,12 +106,21 @@ fun CocktailApp() {
             composable("home") {
                 HomeScreen(
                     viewModel = viewModel,
+                    onSignOut = {
+                        val sharedPrefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                        sharedPrefs.edit().clear().apply()
+                        viewModel.singOut()
+                        navController.navigate("login"){
+                            popUpTo(0) {inclusive = true}
+                            launchSingleTop = true
+                        }
+                    },
                     animatedVisibilityScope = this@composable,
                     sharedTransitionScope = this@SharedTransitionLayout,
                     onCocktailClick = { cocktailId ->
                         navController.navigate("details/$cocktailId")
                     },
-                    onOpenFilter = { navController.navigate("filter") }
+                    onOpenFilter = { navController.navigate("filter") },
                 )
             }
 
@@ -189,21 +224,27 @@ fun CocktailApp() {
      onCocktailClick: (String) -> Unit,
      animatedVisibilityScope: AnimatedVisibilityScope,
      sharedTransitionScope: SharedTransitionScope,
-     onOpenFilter: () -> Unit
+     onOpenFilter: () -> Unit,
+     onSignOut: () -> Unit
  ){
      val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
      var selectedDestination by rememberSaveable { mutableStateOf(CocktailsCategory.Alco) }
-
+     val navController = androidx.compose.ui.platform.LocalContext.current
      Scaffold(
          modifier = Modifier
              .nestedScroll(scrollBehavior.nestedScrollConnection)
              .fillMaxSize(),
-         topBar = { CocktailTopAppBar(
-             scrollBehavior = scrollBehavior,
-             onFilterClick = onOpenFilter,
-             onSearchQueryChanged = {query ->
-                 viewModel.onSearchQueryChange(query)
-             }) },
+         topBar = {
+             if (selectedDestination != CocktailsCategory.Profile){
+                 CocktailTopAppBar(
+                     scrollBehavior = scrollBehavior,
+                     onFilterClick = onOpenFilter,
+                     onSearchQueryChanged = {query ->
+                         viewModel.onSearchQueryChange(query)
+                     }
+                 )
+             }
+        },
          bottomBar = {
              NavigationBar {
                  CocktailsCategory.entries.forEach { category ->
@@ -212,7 +253,10 @@ fun CocktailApp() {
                          onClick = {
                              if (selectedDestination != category) {
                                  selectedDestination = category
-                                 viewModel.getCocktails(category)
+
+                                 if (category.isApiCategory){
+                                     viewModel.getCocktails(category)
+                                 }
                              }
                          },
                          icon = { Icon(category.icon, contentDescription = null) },
@@ -227,13 +271,20 @@ fun CocktailApp() {
                  .fillMaxSize()
                  .padding(innerPadding)
          ) {
-             CocktailsScreen(
-                 cocktailUiState = viewModel.cocktailUiState,
-                 onCocktailClick = onCocktailClick,
-                 animatedVisibilityScope = animatedVisibilityScope,
-                 sharedTransitionScope = sharedTransitionScope,
-                 modifier = Modifier.fillMaxSize()
-             )
+             if (selectedDestination == CocktailsCategory.Profile){
+                 ProfileScreen(
+                     viewModel = viewModel,
+                     onSignOut = onSignOut
+                 )
+             } else {
+                 CocktailsScreen(
+                     cocktailUiState = viewModel.cocktailUiState,
+                     onCocktailClick = onCocktailClick,
+                     animatedVisibilityScope = animatedVisibilityScope,
+                     sharedTransitionScope = sharedTransitionScope,
+                     modifier = Modifier.fillMaxSize()
+                 )
+             }
          }
      }
 }
