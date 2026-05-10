@@ -3,6 +3,7 @@ package com.example.cocktailapp.viewmodel
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.currentCompositeKeyHash
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -12,17 +13,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.network.HttpException
 import com.example.cocktailapp.CocktailApp
+import com.example.cocktailapp.api.BackendClient
 import com.example.cocktailapp.api.CocktailApi
+import com.example.cocktailapp.api.UserInteraction
 import com.example.cocktailapp.data.CocktailDetails
 import com.example.cocktailapp.data.Cocktails
 import com.example.cocktailapp.data.CocktailsCategory
 import com.example.cocktailapp.data.GoogleUser
 import com.example.cocktailapp.data.toDetails
+import com.mongodb.client.model.Filters.and
+import com.mongodb.client.model.Filters.eq
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.IOException
 import kotlin.collections.emptyList
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.withContext
 
 
 sealed interface CocktailUiState{
@@ -33,15 +41,104 @@ sealed interface CocktailUiState{
 
 class CocktailsViewModel() : ViewModel(){
 
+    init {
+        // Діагностика більше не потрібна для MongoDB, але ми залишаємо порожній init
+        // або додаємо іншу стартову логіку
+    }
+
     var user by mutableStateOf<GoogleUser?>(null)
         private set
 
-    fun setUser(
-        email: String?,
-        name: String?,
-        photoUrl: String?
-    ){
+    // 1. Збереження/Оновлення улюбленого
+    fun updateUserInteraction(cocktailId: String, cocktailName: String, imgSrc: String, isFavorite: Boolean, rating: Int) {
+        val currentUser = user?.email ?: return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val interaction = UserInteraction(
+                    userId = currentUser,
+                    cocktailId = cocktailId,
+                    cocktailName = cocktailName,
+                    imgSrc = imgSrc,
+                    isFavorite = isFavorite,
+                    rating = rating
+                )
+
+                // Виклик вашого сервера
+                BackendClient.api.saveFavorite(interaction)
+
+                Log.d("Backend", "Дані відправлено на сервер: $cocktailName")
+                fetchFavorites() // Оновлюємо список
+            } catch (e: Exception) {
+                Log.e("Backend", "Помилка відправки", e)
+            }
+        }
+    }
+
+    var favorites = mutableStateListOf<String>()
+        private set
+
+    // Нова змінна для зберігання повних об'єктів коктейлів для екрану Профілю
+    var favoriteCocktailsList by mutableStateOf<List<UserInteraction>>(emptyList())
+        private set
+
+    // Функція для завантаження улюблених через Бекенд
+    fun fetchFavorites() {
+        val currentUser = user?.email ?: return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Запит до вашого НОВОГО сервера на Railway
+                val results = BackendClient.api.getFavorites(currentUser)
+
+                // Оновлюємо UI в головному потоці
+                withContext(Dispatchers.Main) {
+                    favoriteCocktailsList = results
+
+                    // Оновлюємо також локальний список ID, щоб сердечка показувались правильно
+                    favorites.clear()
+                    favorites.addAll(results.map { it.cocktailId })
+                }
+
+                Log.d("Backend", "Завантажено улюблених через сервер: ${results.size}")
+            } catch (e: Exception) {
+                Log.e("Backend", "Помилка завантаження улюблених", e)
+            }
+        }
+    }
+
+    // Функція перемикання улюбленого
+    // Онови існуючу функцію toggleFavorite
+    fun toggleFavorite(cocktailId: String, cocktailName: String = "Cocktail", imgSrc: String = "") {
+        val isCurrentlyFavorite = favorites.contains(cocktailId)
+        val newFavoriteState = !isCurrentlyFavorite
+
+        // Оновлюємо локально для миттєвої реакції UI
+        if (newFavoriteState) {
+            favorites.add(cocktailId)
+        } else {
+            favorites.remove(cocktailId)
+        }
+
+        // Відправляємо в базу (rating = 0 поки зірочок немає)
+        updateUserInteraction(
+            cocktailId = cocktailId,
+            cocktailName = cocktailName,
+            imgSrc = imgSrc,
+            isFavorite = newFavoriteState,
+            rating = 0
+        )
+    }
+
+    // Перевірка чи коктейль улюблений
+    fun isFavorite(cocktailId: String): Boolean = favorites.contains(cocktailId)
+
+    // У CocktailsViewModel, онови функцію setUser
+    fun setUser(email: String?, name: String?, photoUrl: String?) {
         user = GoogleUser(email, name, photoUrl)
+        if (email != null) {
+            fetchFavorites() // Завантажуємо дані одразу після логіну!
+        }
     }
 
     fun singOut(){

@@ -1,6 +1,5 @@
 package com.example.cocktailapp.ui.theme
 
-
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -38,7 +37,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.cocktailapp.R
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +49,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -63,11 +64,12 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.findFirstRoot
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -78,14 +80,13 @@ import com.bumptech.glide.integration.compose.placeholder
 import com.example.cocktailapp.api.GoogleAuthClient
 import com.example.cocktailapp.data.CocktailDetails
 import com.example.cocktailapp.viewmodel.CocktailsViewModel
-import kotlinx.coroutines.coroutineScope
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ResultScreen(
     cocktails: List<Cocktails>,
     onCocktailClick: (String) -> Unit,
+    viewModel: CocktailsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
     modifier: Modifier = Modifier
@@ -101,8 +102,12 @@ fun ResultScreen(
           CocktailCard(
               cocktails = cocktail,
               onClick = { onCocktailClick(cocktail.id) },
+              isFavorite = viewModel.isFavorite(cocktail.id),
+              onToggleFavorite = { id ->
+                  viewModel.toggleFavorite(cocktailId = id, cocktailName = cocktail.name, imgSrc = cocktail.imgSrc)
+              },
               animatedVisibilityScope = animatedVisibilityScope,
-              sharedTransitionScope = sharedTransitionScope,
+              sharedTransitionScope = sharedTransitionScope
           )
       }
     }
@@ -140,6 +145,7 @@ fun ErrorScreen(modifier: Modifier = Modifier){
 fun CocktailsScreen(
     cocktailUiState: CocktailUiState,
     onCocktailClick: (String) -> Unit,
+    viewModel: CocktailsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
     modifier: Modifier = Modifier
@@ -148,6 +154,7 @@ fun CocktailsScreen(
         is CocktailUiState.Loading -> LoadingScreen(modifier = modifier.fillMaxSize())
         is CocktailUiState.Success -> ResultScreen(
             cocktails = cocktailUiState.cocktails,
+            viewModel = viewModel,
             onCocktailClick = onCocktailClick,
             animatedVisibilityScope = animatedVisibilityScope,
             sharedTransitionScope = sharedTransitionScope,
@@ -163,6 +170,8 @@ fun CocktailsScreen(
 fun CocktailCard(
     cocktails: Cocktails,
     onClick: (String) -> Unit,
+    isFavorite: Boolean,
+    onToggleFavorite: (String) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope
 ){
@@ -173,7 +182,8 @@ fun CocktailCard(
                 .height(300.dp)
                 .clickable { onClick(cocktails.id) }
         ) {
-            Column(
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
                 modifier = Modifier
                     .padding(8.dp),
             ) {
@@ -204,6 +214,28 @@ fun CocktailCard(
                     textAlign = TextAlign.Left
                 )
             }
+                IconButton(
+                    onClick = { onToggleFavorite(cocktails.id) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp)
+                        .size(40.dp)
+                        .scale(if (isFavorite) 1.2f else 1f)
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite)
+                            Icons.Default.Favorite
+                        else
+                            Icons.Default.FavoriteBorder,
+                        contentDescription = if (isFavorite) "Видалити з улюблених" else "Додати в улюблені",
+                        tint = if (isFavorite)
+                            Color.Red
+                        else
+                            Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -211,7 +243,6 @@ fun CocktailCard(
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun CocktailInfo(
-    modifier: Modifier = Modifier,
     cocktails: CocktailDetails,
     onBackClick: () -> Unit,
     onIngredientClick: (String) -> Unit,
@@ -429,6 +460,7 @@ fun FilterScreen(
 fun IngredientScreen(
     ingredientName: String,
     cocktails: List<Cocktails>,
+    viewModel: CocktailsViewModel,
     onCocktailClick: (String) -> Unit,
     onBackClick: () -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -481,6 +513,10 @@ fun IngredientScreen(
                     CocktailCard(
                         cocktails = cocktail,
                         onClick = { onCocktailClick(cocktail.id) },
+                        isFavorite = viewModel.isFavorite(cocktail.id),
+                        onToggleFavorite = { id ->
+                            viewModel.toggleFavorite(cocktailId = id, cocktailName = cocktail.name, imgSrc = cocktail.imgSrc)
+                        },
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope
                     )
@@ -564,18 +600,19 @@ fun GoogleSignInButton(
 @Composable
 fun ProfileScreen(
     viewModel: CocktailsViewModel,
-    onSignOut: () -> Unit
-){
+    onSignOut: () -> Unit,
+    onNavigateToFavorites: () -> Unit
+) {
     val userData = viewModel.user
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-           .padding(16.dp),
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        if (userData?.profilePictureUrl != null){
+        if (userData?.profilePictureUrl != null) {
             GlideImage(
                 model = userData.profilePictureUrl,
                 contentDescription = "Avatar",
@@ -610,8 +647,25 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        OutlinedButton(onClick = { }) {
-            Text("Favorite drinks")
+        OutlinedButton(
+            onClick = onNavigateToFavorites,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Favorite drinks")
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = null,
+                    tint = Color.Red
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -621,29 +675,102 @@ fun ProfileScreen(
                 viewModel.singOut()
                 onSignOut()
             },
-            colors = ButtonDefaults.buttonColors(containerColor =
-            MaterialTheme.colorScheme.error)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor =
+                    MaterialTheme.colorScheme.error
+            ),
+            shape = RoundedCornerShape(8.dp)
         ) {
-            Text("Log out of account")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Log out of account")
+                Icon(
+                    imageVector = Icons.Default.ExitToApp,
+                    contentDescription = null
+                )
+            }
         }
     }
 }
 
-@Preview(showBackground = true)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
-fun LoadingScreenPreview(){
-    CocktailAppTheme() {
-        LoadingScreen()
+fun FavoritesScreen(
+    viewModel: CocktailsViewModel,
+    onBackClick: () -> Unit,
+    onCocktailClick: (String) -> Unit,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope
+) {
+    // При відкритті екрану завжди оновлюємо дані з бази
+    LaunchedEffect(Unit) {
+        viewModel.fetchFavorites()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("My Favorite Drinks") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        if (viewModel.favoriteCocktailsList.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("You haven't added any favorite drinks yet.", color = Color.Gray)
+            }
+        } else {
+            // Перетворюємо UserInteraction назад у Cocktails для відображення в CocktailCard
+            val favoriteCocktails = viewModel.favoriteCocktailsList.map { interaction ->
+                Cocktails(
+                    id = interaction.cocktailId,
+                    name = interaction.cocktailName ?: "Cocktail",
+                    imgSrc = interaction.imgSrc ?: "" // Використовуємо збережене посилання на картинку
+                )
+            }
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(favoriteCocktails) { cocktail ->
+                    CocktailCard(
+                        cocktails = cocktail,
+                        onClick = { onCocktailClick(cocktail.id) },
+                        isFavorite = viewModel.isFavorite(cocktail.id),
+                        onToggleFavorite = { id ->
+                            viewModel.toggleFavorite(cocktailId = id, cocktailName = cocktail.name, imgSrc = cocktail.imgSrc)
+                        },
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        sharedTransitionScope = sharedTransitionScope
+                    )
+                }
+            }
+        }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ErrorScreenPreview(){
-    CocktailAppTheme() {
-        ErrorScreen()
-    }
-}
+
 
 
 

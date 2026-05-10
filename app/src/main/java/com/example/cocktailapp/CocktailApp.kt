@@ -51,6 +51,7 @@ import com.example.cocktailapp.data.CocktailsCategory
 import com.example.cocktailapp.ui.theme.CocktailInfo
 import com.example.cocktailapp.ui.theme.CocktailsScreen
 import com.example.cocktailapp.ui.theme.ErrorScreen
+import com.example.cocktailapp.ui.theme.FavoritesScreen
 import com.example.cocktailapp.ui.theme.FilterScreen
 import com.example.cocktailapp.ui.theme.IngredientScreen
 import com.example.cocktailapp.ui.theme.LoadingScreen
@@ -121,6 +122,8 @@ fun CocktailApp() {
                         navController.navigate("details/$cocktailId")
                     },
                     onOpenFilter = { navController.navigate("filter") },
+                    // ПЕРЕДАЄМО НАВІГАЦІЮ НА FAVORITES:
+                    onNavigateToFavorites = { navController.navigate("favorites") }
                 )
             }
 
@@ -144,12 +147,10 @@ fun CocktailApp() {
             composable(
                 route = "ingredient/{ingredientName}",
                 arguments = listOf(navArgument("ingredientName"){
-                    type =
-                        NavType.StringType
+                    type = NavType.StringType
                 })
             ){ backStackEntry ->
-                val ingredientName =
-                    backStackEntry.arguments?.getString("ingredientName") ?: ""
+                val ingredientName = backStackEntry.arguments?.getString("ingredientName") ?: ""
 
                 LaunchedEffect(ingredientName) {
                     if (ingredientName.isNotEmpty()){
@@ -167,6 +168,7 @@ fun CocktailApp() {
                             IngredientScreen(
                                 ingredientName = ingredientName,
                                 cocktails = state.cocktails,
+                                viewModel = viewModel,
                                 onBackClick = {navController.popBackStack()},
                                 onCocktailClick = { cocktailId ->
                                     navController.navigate("details/$cocktailId")
@@ -179,15 +181,26 @@ fun CocktailApp() {
                 }
             }
 
+            // ДОДАЛИ АНІМАЦІЙНІ СКОУПИ В FAVORITES:
+            composable("favorites") {
+                FavoritesScreen(
+                    viewModel = viewModel,
+                    onBackClick = { navController.popBackStack() },
+                    onCocktailClick = { cocktailId ->
+                        navController.navigate("details/$cocktailId")
+                    },
+                    animatedVisibilityScope = this@composable,
+                    sharedTransitionScope = this@SharedTransitionLayout
+                )
+            }
+
             composable(
                 route = "details/{cocktailId}",
                 arguments = listOf(navArgument("cocktailId") {
-                    type =
-                        NavType.StringType
+                    type = NavType.StringType
                 })
             ) { backStackEntry ->
-                val cocktailId =
-                    backStackEntry.arguments?.getString("cocktailId") ?: ""
+                val cocktailId = backStackEntry.arguments?.getString("cocktailId") ?: ""
 
                 LaunchedEffect(cocktailId) {
                     if (cocktailId.isNotEmpty()){
@@ -217,77 +230,82 @@ fun CocktailApp() {
         }
     }
 }
- @Composable
- @OptIn(ExperimentalSharedTransitionApi::class)
- fun HomeScreen(
-     viewModel: CocktailsViewModel,
-     onCocktailClick: (String) -> Unit,
-     animatedVisibilityScope: AnimatedVisibilityScope,
-     sharedTransitionScope: SharedTransitionScope,
-     onOpenFilter: () -> Unit,
-     onSignOut: () -> Unit
- ){
-     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-     var selectedDestination by rememberSaveable { mutableStateOf(CocktailsCategory.Alco) }
-     val navController = androidx.compose.ui.platform.LocalContext.current
-     Scaffold(
-         modifier = Modifier
-             .nestedScroll(scrollBehavior.nestedScrollConnection)
-             .fillMaxSize(),
-         topBar = {
-             if (selectedDestination != CocktailsCategory.Profile){
-                 CocktailTopAppBar(
-                     scrollBehavior = scrollBehavior,
-                     onFilterClick = onOpenFilter,
-                     onSearchQueryChanged = {query ->
-                         viewModel.onSearchQueryChange(query)
-                     }
-                 )
-             }
-        },
-         bottomBar = {
-             NavigationBar {
-                 CocktailsCategory.entries.forEach { category ->
-                     NavigationBarItem(
-                         selected = selectedDestination == category,
-                         onClick = {
-                             if (selectedDestination != category) {
-                                 selectedDestination = category
 
-                                 if (category.isApiCategory){
-                                     viewModel.getCocktails(category)
-                                 }
-                             }
-                         },
-                         icon = { Icon(category.icon, contentDescription = null) },
-                         label = { Text(category.label) }
-                     )
-                 }
-             }
-         }
-     ) { innerPadding ->
-         Surface(
-             modifier = Modifier
-                 .fillMaxSize()
-                 .padding(innerPadding)
-         ) {
-             if (selectedDestination == CocktailsCategory.Profile){
-                 ProfileScreen(
-                     viewModel = viewModel,
-                     onSignOut = onSignOut
-                 )
-             } else {
-                 CocktailsScreen(
-                     cocktailUiState = viewModel.cocktailUiState,
-                     onCocktailClick = onCocktailClick,
-                     animatedVisibilityScope = animatedVisibilityScope,
-                     sharedTransitionScope = sharedTransitionScope,
-                     modifier = Modifier.fillMaxSize()
-                 )
-             }
-         }
-     }
+@Composable
+@OptIn(ExperimentalSharedTransitionApi::class)
+fun HomeScreen(
+    viewModel: CocktailsViewModel,
+    onCocktailClick: (String) -> Unit,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
+    onOpenFilter: () -> Unit,
+    onSignOut: () -> Unit,
+    onNavigateToFavorites: () -> Unit // ДОДАНО
+){
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    var selectedDestination by rememberSaveable { mutableStateOf(CocktailsCategory.Alco) }
+
+    Scaffold(
+        modifier = Modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .fillMaxSize(),
+        topBar = {
+            if (selectedDestination != CocktailsCategory.Profile){
+                CocktailTopAppBar(
+                    scrollBehavior = scrollBehavior,
+                    onFilterClick = onOpenFilter,
+                    onSearchQueryChanged = {query ->
+                        viewModel.onSearchQueryChange(query)
+                    }
+                )
+            }
+        },
+        bottomBar = {
+            NavigationBar {
+                CocktailsCategory.entries.forEach { category ->
+                    NavigationBarItem(
+                        selected = selectedDestination == category,
+                        onClick = {
+                            if (selectedDestination != category) {
+                                selectedDestination = category
+
+                                if (category.isApiCategory){
+                                    viewModel.getCocktails(category)
+                                }
+                            }
+                        },
+                        icon = { Icon(category.icon, contentDescription = null) },
+                        label = { Text(category.label) }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            if (selectedDestination == CocktailsCategory.Profile){
+                ProfileScreen(
+                    viewModel = viewModel,
+                    onSignOut = onSignOut,
+                    onNavigateToFavorites = onNavigateToFavorites // ПЕРЕДАЄМО ДАЛІ
+                )
+            } else {
+                CocktailsScreen(
+                    cocktailUiState = viewModel.cocktailUiState,
+                    viewModel = viewModel,
+                    onCocktailClick = onCocktailClick,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    sharedTransitionScope = sharedTransitionScope,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CocktailTopAppBar(
