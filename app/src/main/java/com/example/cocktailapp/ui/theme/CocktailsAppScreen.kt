@@ -179,7 +179,7 @@ fun CocktailCard(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
+                .height(280.dp)
                 .clickable { onClick(cocktails.id) }
         ) {
             Box(modifier = Modifier.fillMaxSize()) {

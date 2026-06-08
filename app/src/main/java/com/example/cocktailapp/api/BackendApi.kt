@@ -16,8 +16,7 @@ data class UserInteraction(
     val cocktailId: String,
     val cocktailName: String? = "Cocktail",
     val imgSrc: String? = "",
-    val isFavorite: Boolean,
-    val rating: Int
+    val isFavorite: Boolean
 )
 
 interface CocktailApiService {

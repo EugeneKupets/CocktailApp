@@ -50,7 +50,7 @@ class CocktailsViewModel() : ViewModel(){
         private set
 
     // 1. Збереження/Оновлення улюбленого
-    fun updateUserInteraction(cocktailId: String, cocktailName: String, imgSrc: String, isFavorite: Boolean, rating: Int) {
+    fun updateUserInteraction(cocktailId: String, cocktailName: String, imgSrc: String, isFavorite: Boolean) {
         val currentUser = user?.email ?: return
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -60,15 +60,14 @@ class CocktailsViewModel() : ViewModel(){
                     cocktailId = cocktailId,
                     cocktailName = cocktailName,
                     imgSrc = imgSrc,
-                    isFavorite = isFavorite,
-                    rating = rating
+                    isFavorite = isFavorite
                 )
 
                 // Виклик вашого сервера
                 BackendClient.api.saveFavorite(interaction)
 
                 Log.d("Backend", "Дані відправлено на сервер: $cocktailName")
-                fetchFavorites() // Оновлюємо список
+                fetchFavorites() // Оновлюємо список улюблених
             } catch (e: Exception) {
                 Log.e("Backend", "Помилка відправки", e)
             }
@@ -120,13 +119,12 @@ class CocktailsViewModel() : ViewModel(){
             favorites.remove(cocktailId)
         }
 
-        // Відправляємо в базу (rating = 0 поки зірочок немає)
+        // Відправляємо в базу
         updateUserInteraction(
             cocktailId = cocktailId,
             cocktailName = cocktailName,
             imgSrc = imgSrc,
-            isFavorite = newFavoriteState,
-            rating = 0
+            isFavorite = newFavoriteState
         )
     }
 
